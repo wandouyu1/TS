@@ -1,6 +1,8 @@
+function [bestCost,T] =  TS(tabuTenure,numNeighbors,maxIterations)
+% maxIterations: 最大迭代次数  
+% tabuTenure: 禁忌表长度  
+% numNeighbors: 每个解生成的邻居数量
 %禁忌搜索算法
-clear;
-clc;
 Clist=[1304 2312;3639 1315;4177 2244;3712 1399;3488 1535;3326 1556;3238 1229;...
     4196 1044;4312  790;4386  570;3007 1970;2562 1756;2788 1491;2381 1676;...
     1332  695;3715 1678;3918 2179;4061 2370;3780 2212;3676 2578;4029 2838;...
@@ -20,10 +22,12 @@ for i=1:CityNum
     end
 end
 
-maxIterations = 30000;    % 最大迭代次数  
-tabuTenure = 16;         % 禁忌表长度  
-numNeighbors = 100;        % 每个解生成的邻居数量
 
+% 
+% maxIterations = 30000;    % 最大迭代次数  
+% tabuTenure = 16;         % 禁忌表长度  
+% numNeighbors = 100;        % 每个解生成的邻居数量
+tic
 % 初始解（随机生成一个排列）  
 initialSolution = randperm(CityNum);  
 initialCost = calculateCost(initialSolution, distanceMatrix);
@@ -53,21 +57,29 @@ for iter = 1:maxIterations
     bestNeighborSolution = neighbors{bestNeighborIdx};  
     [~, Idx] = sort(neighborCosts); 
     next = 1;
-    % 检查禁忌表  
-    while(isTabu(bestNeighborSolution, tabuList, tabuTenure))   
-        % 如果禁忌，选择次优非禁忌邻居  
-        next = next + 1;
-        secondBestIdx = Idx(next); % 排除第一个（最佳但被禁忌的）  
-        bestNeighborSolution = neighbors{secondBestIdx};  
-        bestNeighborCost = neighborCosts(secondBestIdx);  
-    end  
+    %解禁条件
+    if bestNeighborCost <= bestCost || rand <0.1
+        bestNeighborSolution = neighbors{Idx(next)};  
+        bestNeighborCost = neighborCosts(Idx(next)); 
+    else
+
+        % 检查禁忌表  
+        while(isTabu(bestNeighborSolution, tabuList, tabuTenure))   
+            % 如果禁忌，选择次优非禁忌邻居  
+            next = next + 1;
+            secondBestIdx = Idx(next); % 排除第一个（最佳但被禁忌的）  
+            bestNeighborSolution = neighbors{secondBestIdx};  
+            bestNeighborCost = neighborCosts(secondBestIdx);  
+        end  
+    end
+    % 更新当前解  
+    currentSolution = bestNeighborSolution;  
+    currentCost = bestNeighborCost;
 
     % 更新禁忌表  
     updateTabuList(tabuList, currentSolution, tabuTenure);  
 
-    % 更新当前解  
-    currentSolution = bestNeighborSolution;  
-    currentCost = bestNeighborCost;  
+      
 
     % 更新最优解  
     if currentCost < bestCost  
@@ -75,22 +87,25 @@ for iter = 1:maxIterations
         bestCost = currentCost;  
     end  
 
-    % 输出当前迭代信息  
-    fprintf('Iteration %d: Best Cost = %.2f\n', iter, bestCost); 
-    fprintf('Iteration %d: current Cost = %.2f\n', iter, currentCost);
+    % % 输出当前迭代信息  
+    % fprintf('Iteration %d: Best Cost = %.2f\n', iter, bestCost); 
+    % fprintf('Iteration %d: current Cost = %.2f\n', iter, currentCost);
 end  
-
+toc
  % 输出最终结果  
-disp('Best Solution:');  
-disp(bestSolution);  
+% disp('Best Solution:');  
+% disp(bestSolution);  
 disp(['Best Cost: ', num2str(bestCost)]);
+disp(['运行时间: ',num2str(toc)]);
+T = toc;
 
-% 可视化最优路径  
-figure;  
-plot(Clist(bestSolution, 1), Clist(bestSolution, 2), 'o-');  
-hold on;  
-plot(Clist(bestSolution(end), 1), Clist(bestSolution(end), 2), 'ro'); % 回到起点  
-title('Best Route');  
-xlabel('X');  
-ylabel('Y');  
-grid on; 
+% % 可视化最优路径  
+% figure;  
+% plot(Clist(bestSolution, 1), Clist(bestSolution, 2), 'o-');  
+% hold on;  
+% plot(Clist(bestSolution(end), 1), Clist(bestSolution(end), 2), 'ro'); % 回到起点  
+% title('Best Route');  
+% xlabel('X');  
+% ylabel('Y');  
+% grid on; 
+end
